@@ -1,0 +1,51 @@
+{
+  "ariri": {
+    "name": "阿梨梨", "voice": 880,
+    "skin": "#ffe4d2", "hair": "#fbf8ff", "hairShade": "#cfc6ee", "hairStyle": "long",
+    "dress": "#5a4fb8", "dressShade": "#433a95", "hem": "#fff2a0",
+    "legs": ["#ffffff", "#3b2a4a"], "boot": "#b25bd6",
+    "hat": "witch", "hatColor": ["#6a74e8", "#4a4fb8", "#9aa6ff"], "tall": 0
+  },
+  "mom": {
+    "name": "妈妈", "voice": 560,
+    "skin": "#ffe4d2", "hair": "#fbf8ff", "hairShade": "#cfc6ee", "hairStyle": "bun",
+    "dress": "#a58ce0", "dressShade": "#8570c4", "hem": "#ffd6e6", "apron": "#ffe2ee",
+    "legs": ["#ffe4d2", "#ffe4d2"], "boot": "#8a5a9a",
+    "hat": "none", "hatColor": ["#6a74e8", "#4a4fb8", "#9aa6ff"], "tall": 3
+  },
+  "builder": {
+    "name": "建筑工", "voice": 300,
+    "skin": "#f5c9a8", "hair": "#8a5a3c", "hairShade": "#6a4230", "hairStyle": "short",
+    "dress": "#ff9a4a", "dressShade": "#e0703a", "hem": "#5a6a8a", "apron": "#6f86c4",
+    "legs": ["#5a6a8a", "#5a6a8a"], "boot": "#7d5038",
+    "hat": "helmet", "hatColor": ["#ffd84a", "#e0a830", "#fff2a0"], "tall": 2
+  },
+  "granny": {
+    "name": "苹果婆婆", "voice": 400,
+    "skin": "#ffd9c4", "hair": "#e4e0ec", "hairShade": "#b0a8c4", "hairStyle": "bun",
+    "dress": "#7cc46a", "dressShade": "#5aa050", "hem": "#f5e2c0", "apron": "#f5e2c0",
+    "legs": ["#ffe4d2", "#ffe4d2"], "boot": "#a8704c",
+    "hat": "scarf", "hatColor": ["#ff7a8a", "#e0506a", "#ffffff"], "tall": 1, "glasses": true
+  },
+  "fisher": {
+    "name": "阿鲈", "voice": 640,
+    "skin": "#ffdcc4", "hair": "#ff9a4a", "hairShade": "#e0703a", "hairStyle": "short",
+    "dress": "#5aa8e0", "dressShade": "#3f86c0", "hem": "#d8f2ff",
+    "legs": ["#ffe4d2", "#ffe4d2"], "boot": "#5a6a8a",
+    "hat": "straw", "hatColor": ["#f5d37a", "#d0a850", "#fff0b0"], "tall": 0
+  },
+  "senior": {
+    "name": "闪闪学姐", "voice": 760,
+    "skin": "#ffe4d2", "hair": "#ffd84a", "hairShade": "#e0a830", "hairStyle": "long",
+    "dress": "#3f3a78", "dressShade": "#2e2a5c", "hem": "#fff27a",
+    "legs": ["#3b2a4a", "#3f3a78"], "boot": "#2e2a5c",
+    "hat": "witch", "hatColor": ["#f0c040", "#c89a28", "#ffe98a"], "tall": 1
+  },
+  "teacher": {
+    "name": "老师", "voice": 330,
+    "skin": "#ffe0cc", "hair": "#9fb4e8", "hairShade": "#6f86c4", "hairStyle": "long",
+    "dress": "#5a4a80", "dressShade": "#43386a", "hem": "#c9a0ff",
+    "legs": ["#43386a", "#43386a"], "boot": "#2a2044",
+    "hat": "tall", "hatColor": ["#3b2e5a", "#2a2044", "#5e4e88"], "tall": 4, "glasses": true
+  }
+}

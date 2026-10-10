@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="UTF-8">
+<title>地图对话编辑器回归检查</title>
+<style>
+  body { margin: 0; background: #171126; color: #eee; font: 14px sans-serif; }
+  #controls { height: 40px; display: flex; align-items: center; gap: 12px; padding: 0 12px; }
+  #editor { display: flex; height: calc(100vh - 40px); }
+  button, input, select, textarea { color: #eee; background: #302446; border: 1px solid #64517f; padding: 5px; }
+  textarea { min-height: 60px; }
+</style>
+<div id="controls"><b>隔离测试：只写入本页会话存储</b><button id="reset">重置测试</button><button id="save">保存测试</button><button id="reopen">重新打开</button><span id="status"></span></div>
+<div id="editor"></div>
+<script type="module" src="./map-canvases-preview.ts"></script>
+</html>

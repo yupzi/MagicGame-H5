@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>魔法丘陵 Magic Hills</title>
+  <link rel="icon" href="data:," />
+  <style>
+    html, body { margin: 0; height: 100%; background: #2a1f3d; overflow: hidden; }
+    body { display: flex; align-items: center; justify-content: center; font-family: "Microsoft YaHei", "PingFang SC", sans-serif; }
+    #wrap { position: relative; }
+    canvas#game { display: block; image-rendering: pixelated; image-rendering: crisp-edges; }
+    #overlay {
+      position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      background: rgba(42, 31, 61, 0.72); color: #fff6e8; text-align: center; cursor: pointer; user-select: none;
+    }
+    #overlay.hidden { display: none; }
+    #overlay h1 { margin: 0 0 4px; font-size: 44px; letter-spacing: 6px; color: #ffe478; text-shadow: 0 4px 0 #b0467a, 0 8px 0 #4a2b54; }
+    #overlay .sub { margin-bottom: 26px; color: #ffb3e6; letter-spacing: 2px; }
+    #overlay table { border-collapse: collapse; font-size: 15px; margin-bottom: 26px; }
+    #overlay td { padding: 4px 12px; }
+    #overlay td:first-child { text-align: right; color: #9fe0ff; }
+    #overlay td:last-child { text-align: left; }
+    #overlay .start { font-size: 20px; color: #ffe478; animation: blink 1.1s steps(2) infinite; }
+    @keyframes blink { 50% { opacity: 0.25; } }
+    #hint { position: absolute; left: 0; right: 0; bottom: -26px; text-align: center; color: #8f7fb0; font-size: 12px; }
+
+    /* ---------- signpost tip, zone banner, victory */
+    #tip {
+      position: absolute; left: 50%; bottom: 10px; transform: translate(-50%, 8px); max-width: 78%;
+      padding: 8px 14px; background: #fff6e8; color: #3b2a4a; border: 3px solid #3b2a4a; box-shadow: 0 4px 0 #b0467a;
+      font-size: 14px; line-height: 1.5; opacity: 0; pointer-events: none; transition: opacity 0.15s, transform 0.15s;
+    }
+    #tip.show { opacity: 1; transform: translate(-50%, 0); }
+    #banner {
+      position: absolute; left: 0; right: 0; top: 18%; text-align: center; pointer-events: none; opacity: 0;
+      font-size: 30px; letter-spacing: 8px; color: #fff6e8; text-shadow: 0 3px 0 #b0467a, 0 6px 0 #3b2a4a;
+    }
+    #banner.show { animation: banner 2.6s ease-out forwards; }
+    @keyframes banner { 0% { opacity: 0; letter-spacing: 20px; } 15% { opacity: 1; letter-spacing: 8px; } 80% { opacity: 1; } 100% { opacity: 0; } }
+    #victory {
+      position: absolute; inset: 0; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+      background: rgba(42, 31, 61, 0.75); color: #fff6e8; text-align: center;
+    }
+    #victory.show { display: flex; animation: bookIn 0.3s ease-out; }
+    #victory .v-title { font-size: 52px; letter-spacing: 10px; color: #ffe478; text-shadow: 0 4px 0 #b0467a, 0 8px 0 #4a2b54; }
+    #victory .v-sub { font-size: 17px; color: #ffb3e6; }
+    #victory .v-sub.small { font-size: 13px; color: #b9a6dd; }
+    #victory .v-btn {
+      margin-top: 14px; font: inherit; font-size: 16px; padding: 6px 20px; color: #3b2a4a; background: #ffe478;
+      border: 3px solid #3b2a4a; box-shadow: 0 4px 0 #b0467a; cursor: pointer;
+    }
+
+    /* ---------- quests (top right, under the item counters) */
+    #quests { position: absolute; right: 10px; top: 13%; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; pointer-events: none; }
+    #story-time { position: absolute; right: 10px; top: 9%; color: #fff2a0; font-size: 10px; text-shadow: 1px 1px #33234b; pointer-events: none; }
+    .q {
+      padding: 3px 10px; background: rgba(42, 31, 71, 0.82); color: #fff6e8; border: 2px solid #120c22;
+      font-size: 13px; line-height: 1.5; box-shadow: inset 3px 0 0 #ffe478;
+    }
+    .q.done { position: absolute; right: 10px; color: #b8f5a0; box-shadow: inset 3px 0 0 #b8f5a0; animation: questDone 1.6s ease-out forwards; }
+    @keyframes questDone { 0% { transform: scale(1.15); } 15% { transform: scale(1); } 70% { opacity: 1; } 100% { opacity: 0; transform: translateX(20px); } }
+
+    /* ---------- speech bubbles over heads and the narration caption.
+       Placed by bubbles.ts; the pixel-art frames, tails and arrows come from pixelui.ts.
+       --px is one game pixel on screen; --fs/--lh keep the pixel font at a whole multiple. */
+    .bb, #caption {
+      font-family: FusionPixel, "Microsoft YaHei", sans-serif; font-size: var(--fs, 12px); line-height: var(--lh, 14px);
+      -webkit-font-smoothing: none; text-rendering: optimizeSpeed; image-rendering: pixelated;
+      user-select: none; pointer-events: none; white-space: pre-wrap;
+    }
+    .bb-unsaid { visibility: hidden; }
+    /* frames are drawn to the exact box size by pixelui.ts (fitFrame) and scaled by whole pixels */
+    .bb-box, .bb-name, .bb-opt, #caption { background-size: 100% 100%; background-repeat: no-repeat; background-origin: border-box; image-rendering: pixelated; }
+    .bb { position: absolute; left: 0; top: 0; z-index: 3; visibility: hidden; opacity: 0; transition: opacity 0.12s steps(2), visibility 0.12s; }
+    .bb.show { visibility: visible; opacity: 1; }
+    /* a three-frame "boing", stepped like a sprite animation */
+    .bb-pop { position: relative; transform-origin: var(--tx, 50%) 100%; }
+    .bb.pop .bb-pop { animation: bbPop 0.2s steps(1, end); }
+    @keyframes bbPop { 0% { transform: scale(0.35, 0.3); } 33% { transform: scale(1.1, 0.88); } 66% { transform: scale(0.95, 1.06); } 100% { transform: none; } }
+    .bb-box {
+      box-sizing: border-box; width: max-content; min-width: calc(var(--px, 4px) * 18); max-width: calc(var(--px, 4px) * 150);
+      border-style: solid; border-color: transparent;
+      border-width: calc(var(--px, 4px) * 4) calc(var(--px, 4px) * 4) calc(var(--px, 4px) * 5) calc(var(--px, 4px) * 4);
+      padding: 0 calc(var(--px, 4px) * 1); color: #3b2a4a;
+    }
+    .bb.thought .bb-box { border-width: calc(var(--px, 4px) * 3); padding: 0 calc(var(--px, 4px) * 2); color: #5a4a80; }
+    .bb.bark .bb-box {
+      max-width: calc(var(--px, 4px) * 110); min-width: calc(var(--px, 4px) * 10);
+      border-width: calc(var(--px, 4px) * 2) calc(var(--px, 4px) * 2) calc(var(--px, 4px) * 3) calc(var(--px, 4px) * 2);
+    }
+    .bb.free .bb-box { max-width: none; }
+    /* tails: the top rows overlap the frame's bottom edge to open it up */
+    .bb-tail {
+      position: absolute; left: calc(var(--tx, 50%) - var(--px, 4px) * 2); top: calc(100% - var(--px, 4px) * 3);
+      width: calc(var(--px, 4px) * 5); height: calc(var(--px, 4px) * 6); background-size: 100% 100%;
+    }
+    .bb.thought .bb-tail { left: calc(var(--tx, 50%) - var(--px, 4px) * 3); top: calc(100% + var(--px, 4px)); width: calc(var(--px, 4px) * 6); height: calc(var(--px, 4px) * 8); }
+    .bb.bark:not(.thought) .bb-tail { left: calc(var(--tx, 50%) - var(--px, 4px)); width: calc(var(--px, 4px) * 3); height: calc(var(--px, 4px) * 4); }
+    .bb.free .bb-tail { display: none; }
+    /* name tag in the speaker's colours, sitting on the frame's top edge */
+    .bb-name {
+      position: absolute; left: calc(var(--px, 4px) * 3); top: 0; transform: translateY(calc(-100% + var(--px, 4px) * 2));
+      box-sizing: border-box; border-style: solid; border-color: transparent; border-width: calc(var(--px, 4px) * 2);
+      padding: 0 var(--px, 4px); color: #fff6e8; white-space: nowrap;
+      text-shadow: calc(var(--fs, 12px) / 12) calc(var(--fs, 12px) / 12) 0 #3b2a4a;
+    }
+    .bb-name:empty { display: none; }
+    /* the "more" arrow sits right after the last word, like an old RPG; its space is kept so nothing jumps */
+    .bb-next {
+      display: inline-block; width: calc(var(--px, 4px) * 7); height: calc(var(--px, 4px) * 5); margin-left: var(--px, 4px);
+      vertical-align: middle; background-size: 100% 100%; visibility: hidden;
+    }
+    .bb.done .bb-next, #caption.done .bb-next { visibility: visible; animation: pxBob 0.6s steps(1, end) infinite; }
+    .bb.bark .bb-next, .bb.choosing .bb-next { display: none; }
+    @keyframes pxBob { 50% { transform: translateY(var(--px, 4px)); } }
+    /* choices */
+    .bb-choices { display: none; flex-direction: column; }
+    .bb.choosing { pointer-events: auto; }
+    .bb.choosing .bb-choices { display: flex; }
+    .bb.choosing .bb-text { display: none; }
+    .bb-opt.on { background-image: var(--pill); }
+    .bb-opt { box-sizing: border-box; position: relative; padding: 0 calc(var(--px, 4px) * 2) 0 calc(var(--px, 4px) * 7); border: calc(var(--px, 4px) * 2) solid transparent; cursor: pointer; }
+    .bb-opt.on::before {
+      content: ""; position: absolute; left: 0; top: 0; bottom: 0; margin: auto 0;
+      width: calc(var(--px, 4px) * 5); height: calc(var(--px, 4px) * 7); background-size: 100% 100%;
+      animation: pxNudge 0.6s steps(1, end) infinite;
+    }
+    @keyframes pxNudge { 50% { transform: translateX(var(--px, 4px)); } }
+    /* narration: a night-purple band with dithered edges and two twinkling stars */
+    #caption {
+      position: absolute; left: 0; top: calc(var(--px, 4px) * 8); z-index: 3; width: max-content; max-width: 80%;
+      box-sizing: border-box; border-style: solid; border-color: transparent; border-width: calc(var(--px, 4px) * 2);
+      padding: var(--px, 4px) calc(var(--px, 4px) * 9); color: #e6dcf7; text-align: center; display: none;
+    }
+    #caption.show { display: block; animation: capIn 0.2s steps(2); }
+    @keyframes capIn { from { opacity: 0; } }
+    #caption::before, #caption::after {
+      content: ""; position: absolute; top: 0; bottom: 0; margin: auto 0; width: calc(var(--px, 4px) * 5); height: calc(var(--px, 4px) * 5);
+      background-size: 100% 100%; animation: twinkle 1.2s steps(1, end) infinite;
+    }
+    #caption::before { left: calc(var(--px, 4px) * 2); }
+    #caption::after { right: calc(var(--px, 4px) * 2); animation-delay: -0.6s; }
+    @keyframes twinkle { 50% { opacity: 0.3; } }
+
+    /* ---------- star chart (skill tree) */
+    @keyframes bookIn { from { transform: scale(0.92); opacity: 0; } }
+    #tree { position: absolute; inset: 0; pointer-events: none; user-select: none; }
+    #tree.hidden { display: none; }
+    #tree img { image-rendering: pixelated; }
+    .tree-card {
+      position: absolute; width: 230px; transform: translate(0, -50%); padding: 10px 12px 9px;
+      background: #2a1f47; color: #fff6e8; border: 3px solid #120c22;
+      box-shadow: inset 0 0 0 2px var(--branch, #7a5cb0), 0 5px 0 #120c22;
+      font-size: 13px; line-height: 1.5;
+    }
+    .tree-card.flip { transform: translate(-100%, -50%); }
+    .tree-card.pop { animation: cardPop 0.22s cubic-bezier(.2, 1.6, .4, 1); }
+    .tree-card.flip.pop { animation-name: cardPopFlip; }
+    @keyframes cardPop { from { transform: translate(-8px, -50%) scale(0.85); opacity: 0; } }
+    @keyframes cardPopFlip { from { transform: translate(calc(-100% + 8px), -50%) scale(0.85); opacity: 0; } }
+    .tree-card.deny { animation: cardDeny 0.32s; }
+    .tree-card.flip.deny { animation-name: cardDenyFlip; }
+    @keyframes cardDeny { 20% { transform: translate(-6px, -50%); } 40% { transform: translate(6px, -50%); } 60% { transform: translate(-4px, -50%); } 80% { transform: translate(3px, -50%); } }
+    @keyframes cardDenyFlip { 20% { transform: translate(calc(-100% - 6px), -50%); } 40% { transform: translate(calc(-100% + 6px), -50%); } 60% { transform: translate(calc(-100% - 4px), -50%); } }
+    .tree-card.deny .c:not(.ok), .tree-card.deny .tc-foot.no, .tree-card.deny .tc-foot.max { animation: redFlash 0.5s; }
+    @keyframes redFlash { 0%, 50% { color: #fff; background: #ff4d6a; } }
+    .tc-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
+    .tc-name { font-size: 17px; letter-spacing: 2px; color: #ffe478; }
+    .tc-lv { font-size: 12px; color: #b9a6dd; white-space: nowrap; }
+    .tc-desc { color: #e6dcf7; }
+    .tc-stat { margin-top: 5px; padding: 3px 6px; background: #1c1432; font-size: 12px; color: #b9a6dd; }
+    .tc-stat b { color: #fff6e8; font-weight: normal; }
+    .tc-stat b.up { color: #b8f5a0; }
+    .tc-stat i { font-style: normal; color: #ffe478; font-size: 10px; }
+    .tc-cost { display: flex; flex-wrap: wrap; gap: 3px 10px; margin-top: 6px; font-size: 12px; }
+    .tc-cost .c { display: inline-flex; align-items: center; gap: 3px; color: #ff9eb8; padding: 0 2px; }
+    .tc-cost .c.ok { color: #b8f5a0; }
+    .tc-cost img { width: 14px; height: auto; }
+    .tc-foot { margin-top: 6px; padding-top: 5px; border-top: 1px dashed #4a3a78; font-size: 12px; color: #9f8fc0; }
+    .tc-foot.go { color: #ffe478; animation: blink 0.9s steps(2) infinite; }
+    .tc-foot.max { color: #ffd24a; }
+    .tc-foot.no { color: #ff9eb8; }
+    .rainbow span { display: inline-block; animation: rainbowHue 1.6s linear infinite, rainbowBob 0.9s ease-in-out infinite; animation-delay: calc(var(--i) * -0.12s); }
+    @keyframes rainbowHue { 0% { color: #ff7a9a; } 20% { color: #ffb86a; } 40% { color: #fff27a; } 60% { color: #8ff0a4; } 80% { color: #8fd0ff; } 100% { color: #ff7a9a; } }
+    @keyframes rainbowBob { 50% { transform: translateY(-2px); } }
+    .kw-star { color: #fff2a0; } .kw-fire { color: #ffa45a; } .kw-ice { color: #9fe6ff; } .kw-volt { color: #fff27a; }
+    .kw-heart { color: #ff8aa3; } .kw-leaf { color: #b0f07e; } .kw-green { color: #b8f5a0; }
+    .tree-foot {
+      position: absolute; left: 0; right: 0; bottom: 0; display: flex; align-items: center; gap: 14px; padding: 5px 10px;
+      background: linear-gradient(transparent, rgba(18, 12, 34, 0.9)); font-size: 12px; color: #b9a6dd; pointer-events: auto;
+    }
+    .tree-title { color: #ffe478; letter-spacing: 3px; font-size: 14px; }
+    .tree-keys { flex: 1; }
+    .tree-reset { font: inherit; font-size: 11px; color: #8f7fb0; background: none; border: 1px solid #5e4a8a; padding: 1px 8px; cursor: pointer; }
+    .tree-reset:hover { color: #ff9eb8; border-color: #ff9eb8; }
+
+    /* ---------- rune weaving table */
+    #weave { position: absolute; inset: 0; pointer-events: none; user-select: none; }
+    #weave.hidden { display: none; }
+    .weave-card {
+      position: absolute; box-sizing: border-box; padding: 8px 10px 7px;
+      background: #2a1f47; color: #fff6e8; border: 3px solid #120c22;
+      box-shadow: inset 0 0 0 2px var(--branch, #7a5cb0), 0 5px 0 #120c22;
+      font-size: 12px; line-height: 1.45;
+    }
+    .weave-card .tc-name { font-size: 15px; }
+    .weave-card.deny { animation: weaveDeny 0.32s; }
+    .weave-card.deny .tc-desc { animation: redFlash 0.5s; }
+    @keyframes weaveDeny { 20% { transform: translateX(-6px); } 40% { transform: translateX(6px); } 60% { transform: translateX(-4px); } 80% { transform: translateX(3px); } }
+    .wc-form { color: #e6c8ff; }
+    .wc-use { margin-top: 4px; color: #b9a6dd; }
+  </style>
+</head>
+<body>
+  <div id="wrap">
+    <canvas id="game"></canvas>
+    <div id="overlay">
+      <h1>魔法丘陵</h1>
+      <div class="sub">Magic Hills · 像素魔法冒险</div>
+      <table>
+        <tr><td>A / D 或 ← / →</td><td>移动</td></tr>
+        <tr><td>空格 / W / ↑ / Z</td><td>跳跃，空中再按可以鼓起来飘浮（最多 5 次）</td></tr>
+        <tr><td>J / X</td><td>发射当前魔法</td></tr>
+        <tr><td>按住 K / C，松开</td><td>蓄力画出魔法阵，释放星光柱</td></tr>
+        <tr><td>S / ↓ + 跳跃</td><td>从云朵平台落下</td></tr>
+        <tr><td>E / Tab</td><td>打开魔法星盘：用材料点亮元素符文和技能</td></tr>
+        <tr><td>R</td><td>符文编织：元素 + 形态 = 你自己的魔法</td></tr>
+        <tr><td>Q / L</td><td>切换咒式栏里的魔法</td></tr>
+        <tr><td>门口按 ↑ · 灯笼旁按住 ↓</td><td>进出小屋 · 灯笼旅行</td></tr>
+        <tr><td>手柄</td><td>A 跳跃 · X 魔法 · Y/B 蓄力 · LB/RB 切换 · Start 星盘 · Select 编织</td></tr>
+      </table>
+      <div class="start">按任意键开始</div>
+    </div>
+    <div id="hint">星盘点亮元素 · 石碑拓印形态 · 按 R 把它们织成魔法 · 进度自动保存</div>
+  </div>
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>

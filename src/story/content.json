@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "quests": [
+    {
+      "id": "wood",
+      "title": "修桥",
+      "stages": [
+        {
+          "id": "collect",
+          "title": "收集木头",
+          "hint": "收集木头 {木头}/3（用魔法打树）",
+          "condition": "木头>=3",
+          "autoAdvance": false
+        }
+      ]
+    }
+  ],
+  "periods": [
+    {
+      "id": "morning",
+      "name": "早晨"
+    },
+    {
+      "id": "afternoon",
+      "name": "午后"
+    },
+    {
+      "id": "evening",
+      "name": "傍晚"
+    },
+    {
+      "id": "night",
+      "name": "夜晚"
+    }
+  ],
+  "timeline": []
+}
